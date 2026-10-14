@@ -1,0 +1,32 @@
+/// RLS mapping: which territory each Territory Manager user may see. Replace the sample emails with real UPNs (or source from AD/HR) in production.
+table security_user_territory
+	isHidden
+	lineageTag: b51e1a0e-938a-4966-b23e-997ad69db692
+
+	column user_email
+		lineageTag: f40dce6a-b687-42c0-a14c-b0cffec11ce2
+		isNameInferred
+		sourceColumn: [user_email]
+
+	column territory
+		lineageTag: 733bc7ed-c0c8-4c47-bf8c-786391ed694a
+		isNameInferred
+		sourceColumn: [territory]
+
+	partition security_user_territory = calculated
+		mode: import
+		source =
+				DATATABLE(
+				    "user_email", STRING,
+				    "territory", STRING,
+				    {
+				        { "tm.t-n1@agency.example", "T-N1" },
+				        { "tm.t-n2@agency.example", "T-N2" },
+				        { "tm.t-n3@agency.example", "T-N3" },
+				        { "tm.t-s1@agency.example", "T-S1" },
+				        { "tm.t-s2@agency.example", "T-S2" },
+				        { "tm.t-s3@agency.example", "T-S3" },
+				        { "tm.t-e1@agency.example", "T-E1" }
+				    }
+				)
+

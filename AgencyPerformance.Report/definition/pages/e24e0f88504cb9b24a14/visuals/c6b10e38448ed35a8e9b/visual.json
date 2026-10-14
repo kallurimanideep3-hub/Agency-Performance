@@ -1,0 +1,43 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "c6b10e38448ed35a8e9b",
+  "position": {
+    "x": 40,
+    "y": 1020,
+    "z": 10000,
+    "height": 40,
+    "width": 1820,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Unmapped-agent APE (5.1% of total) is shown in totals but excluded from the Top 10 and the target comparison.",
+                    "textStyle": {
+                      "color": "#6b7280"
+                    }
+                  }
+                ]
+              },
+              {
+                "textRuns": [
+                  {
+                    "value": ""
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

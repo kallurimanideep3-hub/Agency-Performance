@@ -1,0 +1,359 @@
+/// Holder table for all DAX measures.
+table _Measures
+	lineageTag: 5ca1bf96-e872-4a4a-9640-864bb97d76e1
+
+	/// Annualised Premium Equivalent, sum of fact_sales[ape_usd]. Additive across every dimension.
+	measure 'Total APE' = SUM(fact_sales[ape_usd])
+		formatString: $#,0
+		displayFolder: 0 Base
+		lineageTag: 12d73329-02d3-45ff-8788-d4d67ddfabb9
+
+	measure 'Total FYP' = SUM(fact_sales[fyp_usd])
+		formatString: $#,0
+		displayFolder: 0 Base
+		lineageTag: 892e690a-957d-4276-981d-3395936db83f
+
+	measure 'Policies Sold' = SUM(fact_sales[policies_issued])
+		formatString: #,0
+		displayFolder: 0 Base
+		lineageTag: d0e6ac93-8a94-40d2-9e4f-961dc97526d3
+
+	/// Cumulative APE from 1 Jan of the year to the last date in filter context.
+	measure 'APE YTD' = TOTALYTD([Total APE], dim_date[date])
+		formatString: $#,0.0
+		displayFolder: 1 Required
+		lineageTag: 856b04be-74d4-4de1-babb-be15b12e842e
+
+	/// Percent change in APE vs the previous month. Blank for the first month of data (no prior period).
+	measure 'APE MoM Growth %' =
+			VAR _cur = COALESCE([Total APE], 0)
+			VAR _prev =
+			    CALCULATE([Total APE], DATEADD(dim_date[date], -1, MONTH))
+			RETURN
+			    IF(ISBLANK(_prev), BLANK(), DIVIDE(_cur - _prev, _prev))
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 1 Required
+		lineageTag: a9660b54-109e-4495-9816-a294a06c9e33
+
+	/// Trailing 3 calendar months of APE ending at the last date in context. Blank until a full 3-month window exists, so a partial window is never shown as a 3M total.
+	measure 'APE Rolling 3 Months' =
+			VAR _max = MAX(dim_date[date])
+			VAR _start = EDATE(DATE(YEAR(_max), MONTH(_max), 1), -2)
+			VAR _first = CALCULATE(MIN(dim_date[date]), REMOVEFILTERS(dim_date))
+			RETURN
+			    IF(
+			        _start < _first,
+			        BLANK(),
+			        CALCULATE([Total APE], DATESBETWEEN(dim_date[date], _start, _max))
+			    )
+		formatString: $#,0
+		displayFolder: 1 Required
+		lineageTag: efd66b9e-e768-4ee8-b5e1-4a9c594c4d1a
+
+	/// Achievement = actual APE / APE target for the same agents and months. Actual excludes the Unmapped agent because it carries no target.
+	measure 'APE vs Target %' =
+			VAR _t = [APE Target]
+			VAR _actualMapped =
+			    COALESCE(CALCULATE([Total APE], dim_agent[is_mapped_agent] = TRUE()), 0)
+			RETURN
+			    IF(ISBLANK(_t) || _t = 0, BLANK(), DIVIDE(_actualMapped, _t))
+		formatString: 0.0%
+		displayFolder: 1 Required
+		lineageTag: 94c1a08d-b23d-4e40-a7e9-6bcab0707a70
+
+	/// Renewed / (renewed + lapsed + grace). Default date context is renewal due date.
+	measure 'Persistency Rate' =
+			VAR _renewed = CALCULATE(COUNTROWS(fact_persistency), fact_persistency[renewal_status] = "renewed")
+			VAR _due =
+			    CALCULATE(
+			        COUNTROWS(fact_persistency),
+			        fact_persistency[renewal_status] IN { "renewed", "lapsed", "grace" }
+			    )
+			RETURN
+			    DIVIDE(_renewed, _due)
+		formatString: 0.0%
+		displayFolder: 1 Required
+		lineageTag: 750f6fb0-dd74-4a3c-b9fb-bcd1968c7a7b
+
+	/// Semi-additive snapshot: policies issued on or before the last date in context, minus policies that had already lapsed by that date. Not additive over time.
+	measure 'Active Policy Count' =
+			VAR _asOf = MAX(dim_date[date])
+			VAR _k = YEAR(_asOf) * 10000 + MONTH(_asOf) * 100 + DAY(_asOf)
+			VAR _issued =
+			    CALCULATE(
+			        COUNTROWS(fact_persistency),
+			        REMOVEFILTERS(dim_date),
+			        fact_persistency[issue_date_key] <= _k
+			    )
+			VAR _lapsed =
+			    CALCULATE(
+			        COUNTROWS(fact_persistency),
+			        REMOVEFILTERS(dim_date),
+			        fact_persistency[renewal_status] = "lapsed",
+			        fact_persistency[renewal_due_date_key] <= _k
+			    )
+			RETURN
+			    _issued - _lapsed
+		formatString: #,0
+		displayFolder: 1 Required
+		lineageTag: b1d90c87-63bc-4a73-be91-bd855b2c6c53
+
+	/// Distinct agents with active_flag = 1 under current dim_agent filters.
+	measure 'Active Agent Count' = CALCULATE(DISTINCTCOUNT(dim_agent[agent_id]), dim_agent[active_flag] = 1)
+		formatString: #,0
+		displayFolder: 1 Required
+		lineageTag: 7a8d949d-e71a-486d-adf5-2521410b1ee4
+
+	/// Rank of the agent by APE among agents visible after slicers (ALLSELECTED), excluding the Unmapped agent.
+	measure 'Agent Rank by APE' =
+			IF(
+			    ISBLANK([Total APE]) || NOT HASONEVALUE(dim_agent[agent_id]),
+			    BLANK(),
+			    RANKX(
+			        FILTER(ALLSELECTED(dim_agent), dim_agent[is_mapped_agent] = TRUE()),
+			        [Total APE],
+			        ,
+			        DESC,
+			        DENSE
+			    )
+			)
+		formatString: 0
+		displayFolder: 1 Required
+		lineageTag: a0a44845-6273-4b78-8967-dd182a103f27
+
+	/// Sum of agent monthly targets for the months in the date filter, via the dim_month bridge.
+	measure 'APE Target' =
+			CALCULATE(
+			    SUM(fact_target[ape_target_usd]),
+			    TREATAS(VALUES(dim_date[month_start_date]), dim_month[month_start_date])
+			)
+		formatString: $#,0
+		displayFolder: 2 Supporting
+		lineageTag: 22f8c9b5-65e1-42df-9a34-474ae600d31f
+
+	/// Above >= 100%, On track 90-100%, Below < 90%.
+	measure 'Target Status' =
+			VAR _p = [APE vs Target %]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        ISBLANK(_p), "No target",
+			        _p >= 1, "Above target",
+			        _p >= 0.9, "On track",
+			        "Below target"
+			    )
+		displayFolder: 2 Supporting
+		lineageTag: 4356ed48-7c9f-45d1-8b1c-4f47feca3e3e
+
+	measure 'MoM Arrow' =
+			VAR _g = [APE MoM Growth %]
+			RETURN
+			    IF(ISBLANK(_g), "-", IF(_g > 0, UNICHAR(9650), IF(_g < 0, UNICHAR(9660), UNICHAR(9644))))
+		displayFolder: 2 Supporting
+		lineageTag: 6d491256-1994-435b-ad3b-93fa59247a5d
+
+	measure 'Top Product by APE' = MAXX(TOPN(1, VALUES(dim_product[product_name]), [Total APE], DESC), dim_product[product_name])
+		displayFolder: 2 Supporting
+		lineageTag: f4daeef4-3a73-4590-9e80-edda100c2afb
+
+	measure 'Selected Agent Name' = SELECTEDVALUE(dim_agent[agent_name], "No agent selected")
+		displayFolder: 2 Supporting
+		lineageTag: 4ab7f819-e815-43f6-b9ec-cce51d7f9389
+
+	/// APE on sales rows whose agent_id is not in dim_agent.
+	measure 'Unmapped Agent APE' = CALCULATE([Total APE], dim_agent[is_mapped_agent] = FALSE())
+		formatString: $#,0
+		displayFolder: 3 Data Quality
+		lineageTag: 6dfc63df-7c32-464e-bd22-a9ccfe0a4e20
+
+	measure 'Unmapped Agent APE %' = DIVIDE([Unmapped Agent APE], CALCULATE([Total APE], REMOVEFILTERS(dim_agent)))
+		formatString: 0.0%
+		displayFolder: 3 Data Quality
+		lineageTag: 0b5759cd-2072-4fdc-84b9-d770dc00a11d
+
+	/// Same rate, but date slicers filter on policy issue date (inactive relationship activated).
+	measure 'Persistency Rate (by Issue Date)' = CALCULATE([Persistency Rate], USERELATIONSHIP(fact_persistency[issue_date_key], dim_date[date_key]))
+		formatString: 0.0%
+		displayFolder: 4 Cohort
+		lineageTag: e701f3bc-b9ad-443b-93eb-9d62c88f671e
+
+	measure 'Policies in Cohort' = COUNTROWS(fact_persistency)
+		formatString: #,0
+		displayFolder: 4 Cohort
+		lineageTag: bf3ccd0d-f485-4423-a571-986e2245d5c1
+
+	/// Total APE as a floating-point number. Deneb does not receive Decimal (currency) measures, so the grid reads this one.
+	measure 'APE (chart feed)' = CONVERT([Total APE], DOUBLE)
+		formatString: #,0
+		displayFolder: 5 Visual feeds
+		lineageTag: 99c89687-14bc-4a76-b80a-817af2fabc01
+
+	/// APE Target as a floating-point number, for Deneb.
+	measure 'APE Target (chart feed)' = CONVERT([APE Target], DOUBLE)
+		formatString: #,0
+		displayFolder: 5 Visual feeds
+		lineageTag: b45a8cfe-2e41-4e06-87ba-c57140f503f3
+
+	/// APE from 1 Jan to the latest date in context, ignoring other date filters. With no date filter it is the latest year in the data.
+	measure 'Card YTD APE' =
+			VAR _asOf = MAX(dim_date[date])
+			RETURN
+			    CALCULATE(
+			        [Total APE],
+			        REMOVEFILTERS(dim_date),
+			        DATESBETWEEN(dim_date[date], DATE(YEAR(_asOf), 1, 1), _asOf)
+			    )
+		formatString: $#,0
+		displayFolder: 6 Agent Card
+		lineageTag: b4387b54-dd00-43d2-a15e-0183a26d4b54
+
+	/// Latest month vs the month before it, independent of other date filters. Blank when the prior month has no sales.
+	measure 'Card MoM %' =
+			VAR _asOf = MAX(dim_date[date])
+			VAR _start = DATE(YEAR(_asOf), MONTH(_asOf), 1)
+			VAR _cur =
+			    CALCULATE([Total APE], REMOVEFILTERS(dim_date), DATESBETWEEN(dim_date[date], _start, EOMONTH(_asOf, 0)))
+			VAR _prev =
+			    CALCULATE([Total APE], REMOVEFILTERS(dim_date), DATESBETWEEN(dim_date[date], EDATE(_start, -1), _start - 1))
+			RETURN
+			    IF(ISBLANK(_prev) || _prev = 0, BLANK(), DIVIDE(COALESCE(_cur, 0) - _prev, _prev))
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 6 Agent Card
+		lineageTag: d6edb0b8-9690-431e-b14d-45fdb2164dfd
+
+	/// Rank by Card YTD APE among ALL agents. Uses ALL(dim_agent) so a drill-through filter on one agent does not make every agent rank 1.
+	measure 'Card Rank' =
+			IF(
+			    ISBLANK([Card YTD APE]),
+			    BLANK(),
+			    RANKX(
+			        FILTER(ALL(dim_agent), dim_agent[is_mapped_agent] = TRUE()),
+			        [Card YTD APE],
+			        ,
+			        DESC,
+			        DENSE
+			    )
+			)
+		formatString: 0
+		displayFolder: 6 Agent Card
+		lineageTag: 0b0808b3-6a40-46b5-9a0d-0bdaa40d419e
+
+	measure 'Card Agents Ranked' =
+			COUNTROWS(
+			    FILTER(
+			        ALL(dim_agent),
+			        dim_agent[is_mapped_agent] = TRUE() && NOT ISBLANK([Card YTD APE])
+			    )
+			)
+		formatString: 0
+		displayFolder: 6 Agent Card
+		lineageTag: 27b1f10b-f21f-4aa9-9707-efbdc2abf715
+
+	/// Product with the highest YTD APE for the selected agent.
+	measure 'Card Top Product' =
+			IF(
+			    ISBLANK([Card YTD APE]),
+			    BLANK(),
+			    MAXX(TOPN(1, VALUES(dim_product[product_name]), [Card YTD APE], DESC), dim_product[product_name])
+			)
+		displayFolder: 6 Agent Card
+		lineageTag: feef1f1c-424a-44f5-b076-879ec79c3fc2
+
+	/// Lifetime persistency for the agent: renewed / (renewed + lapsed + grace), all due dates.
+	measure 'Card Persistency' = CALCULATE([Persistency Rate], REMOVEFILTERS(dim_date))
+		formatString: 0.0%
+		displayFolder: 6 Agent Card
+		lineageTag: 3f121cf7-4d71-45d4-a31a-40c56c63b036
+
+	/// Inline SVG polyline of the agent's APE for the last 12 months, scaled to the agent's own maximum.
+	measure 'Card Sparkline SVG' =
+			VAR _asOf = MAX(dim_date[date])
+			VAR _start = DATE(YEAR(_asOf), MONTH(_asOf), 1)
+			VAR _pts =
+			    ADDCOLUMNS(
+			        GENERATESERIES(0, 11, 1),
+			        "mval",
+			            VAR _ms = EDATE(_start, -[Value])
+			            RETURN
+			                COALESCE(
+			                    CALCULATE([Total APE], REMOVEFILTERS(dim_date), DATESBETWEEN(dim_date[date], _ms, EOMONTH(_ms, 0))),
+			                    0
+			                )
+			    )
+			VAR _max = MAXX(_pts, [mval])
+			VAR _line =
+			    CONCATENATEX(
+			        _pts,
+			        FORMAT((11 - [Value]) / 11 * 140, "0.0", "en-US") & "," & FORMAT(IF(_max = 0, 30, 32 - [mval] / _max * 28), "0.0", "en-US"),
+			        " ",
+			        [Value],
+			        DESC
+			    )
+			RETURN
+			    "<svg width='140' height='36' viewBox='0 0 140 36' xmlns='http://www.w3.org/2000/svg'><polyline points='" & _line & "' fill='none' stroke='#1E3A8A' stroke-width='2' stroke-linejoin='round'/></svg>"
+		displayFolder: 6 Agent Card
+		lineageTag: 12135df7-7027-4a1c-88de-f6dc4c6ba323
+
+	/// HTML for the Page 3 profile card. One selected agent shows the card; anything else shows a prompt. Single quotes in the markup so no DAX escaping is needed; ASCII only, symbols as HTML entities.
+	measure 'Agent Card HTML' =
+			VAR _one = HASONEVALUE(dim_agent[agent_id])
+			VAR _name = SUBSTITUTE(SUBSTITUTE(SELECTEDVALUE(dim_agent[agent_name]), "&", "&amp;"), "<", "&lt;")
+			VAR _terr = SELECTEDVALUE(dim_agent[territory])
+			VAR _code = SELECTEDVALUE(dim_agent[agent_code])
+			VAR _asOf = MAX(dim_date[date])
+			VAR _yr = FORMAT(_asOf, "yyyy", "en-US")
+			VAR _mon = FORMAT(_asOf, "mmm yyyy", "en-US")
+			VAR _ytd = FORMAT(COALESCE([Card YTD APE], 0), "$#,0", "en-US")
+			VAR _rank = IF(ISBLANK([Card Rank]), "&ndash;", "#" & [Card Rank] & " <span style='font-size:16px;color:#6B7280;font-weight:400'>of " & [Card Agents Ranked] & "</span>")
+			VAR _m = [Card MoM %]
+			VAR _momTxt = IF(ISBLANK(_m), "&ndash;", IF(_m >= 0, "&#9650; ", "&#9660; ") & FORMAT(ABS(_m), "0.0%", "en-US"))
+			VAR _momCol = IF(ISBLANK(_m), "#6B7280", IF(_m >= 0, "#16A34A", "#DC2626"))
+			VAR _top = COALESCE([Card Top Product], "No sales this year")
+			VAR _per = IF(ISBLANK([Card Persistency]), "&ndash;", FORMAT([Card Persistency], "0.0%", "en-US"))
+			VAR _tile = "background:#F3F4F6;border-radius:8px;padding:14px 16px;min-width:0"
+			VAR _lab = "font-size:12px;color:#6B7280;margin-bottom:4px"
+			VAR _val = "font-size:30px;font-weight:600;color:#1E3A8A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+			VAR _card =
+			    "<div style='font-family:Segoe UI,Arial,sans-serif;color:#1F2937;box-sizing:border-box;width:100%;height:100%;padding:20px;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:12px'>" &
+			    "<div style='background:#1E3A8A;color:#FFFFFF;border-radius:8px;padding:16px 20px;min-width:0'>" &
+			    "<div style='font-size:28px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & _name & "</div>" &
+			    "<div style='font-size:14px;color:#DBEAFE;margin-top:4px'>Territory " & _terr & " &middot; " & _code & "</div></div>" &
+			    "<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px'>" &
+			    "<div style='" & _tile & "'><div style='" & _lab & "'>YTD APE (" & _yr & ")</div><div style='" & _val & "'>" & _ytd & "</div></div>" &
+			    "<div style='" & _tile & "'><div style='" & _lab & "'>Rank by YTD APE</div><div style='" & _val & "'>" & _rank & "</div></div>" &
+			    "<div style='" & _tile & "'><div style='" & _lab & "'>Month on month (" & _mon & ")</div><div style='display:flex;align-items:center;justify-content:space-between;gap:8px'><div style='font-size:30px;font-weight:600;color:" & _momCol & ";white-space:nowrap'>" & _momTxt & "</div>" & [Card Sparkline SVG] & "</div></div>" &
+			    "<div style='" & _tile & "'><div style='" & _lab & "'>Persistency rate</div><div style='" & _val & "'>" & _per & "</div></div>" &
+			    "<div style='" & _tile & ";grid-column:1 / span 2'><div style='" & _lab & "'>Top product by APE</div><div style='font-size:22px;font-weight:600;color:#1F2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & _top & "</div></div>" &
+			    "</div></div>"
+			VAR _empty =
+			    "<div style='font-family:Segoe UI,Arial,sans-serif;box-sizing:border-box;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:#6B7280;background:#FFFFFF;border:1px dashed #D1D5DB;border-radius:12px;font-size:18px'>Select an agent on the Agent Performance Grid (right-click, Drill through) to see their profile.</div>"
+			RETURN
+			    IF(_one, _card, _empty)
+		displayFolder: 6 Agent Card
+		lineageTag: 7bd6e2a7-d02e-4f2b-af72-58fdf532213c
+
+	measure 'Policies Renewed' = CALCULATE(COUNTROWS(fact_persistency), fact_persistency[renewal_status] = "renewed")
+		formatString: #,0
+		displayFolder: 4 Cohort
+		lineageTag: 775a0de3-626a-4b46-8d2c-4b83ed9bc765
+
+	measure 'Policies Lapsed' = CALCULATE(COUNTROWS(fact_persistency), fact_persistency[renewal_status] = "lapsed")
+		formatString: #,0
+		displayFolder: 4 Cohort
+		lineageTag: 9c0680c4-3eaa-49c0-8807-801d0b932905
+
+	measure 'Policies in Grace' = CALCULATE(COUNTROWS(fact_persistency), fact_persistency[renewal_status] = "grace")
+		formatString: #,0
+		displayFolder: 4 Cohort
+		lineageTag: 1f9fc701-e337-44c4-a9be-474c0ec05f44
+
+	column Value
+		isHidden
+		lineageTag: 82d4cbbd-372b-4493-8167-fe8ff92ab0ad
+		isNameInferred
+		sourceColumn: [Value]
+
+	partition _Measures = calculated
+		mode: import
+		source = DATATABLE("Value", INTEGER, {{ 0 }})
+

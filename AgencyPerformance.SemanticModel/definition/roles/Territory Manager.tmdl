@@ -1,0 +1,16 @@
+/// Territory manager sees only agents (and their sales, targets, persistency) in the territory mapped to their login in security_user_territory.
+role 'Territory Manager'
+	modelPermission: read
+
+	tablePermission dim_agent =
+			dim_agent[territory] IN SELECTCOLUMNS(
+			    FILTER(security_user_territory, security_user_territory[user_email] = USERPRINCIPALNAME()),
+			    "territory", security_user_territory[territory]
+			)
+		metadataPermission: read
+
+	tablePermission security_user_territory = FALSE()
+		metadataPermission: read
+
+	annotation PBI_Id = 8dee4850ffca4a048462a95a4e81f8f5
+

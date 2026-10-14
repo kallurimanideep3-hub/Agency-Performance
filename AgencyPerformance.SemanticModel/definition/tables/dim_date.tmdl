@@ -1,0 +1,95 @@
+/// Calendar, one row per day 2023-2025. Month-grain columns added for the target bridge.
+table dim_date
+	lineageTag: 9c8fe69d-e80e-45de-b395-f4ac9bbdf7ed
+	dataCategory: Time
+
+	column date_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f0a1454b-9ccf-4307-81b7-8639dc6610ae
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column date
+		dataType: dateTime
+		isUnique
+		formatString: dd-MMM-yyyy
+		lineageTag: 37864a82-8c3e-4653-af7d-3be2124c855c
+		summarizeBy: none
+		sourceColumn: date
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 799e647c-2514-4252-9d9b-9c369753a2b7
+		summarizeBy: none
+		sourceColumn: year
+
+	column quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: 7e246331-a58e-46fa-a4d9-6deee0ae09e4
+		summarizeBy: none
+		sourceColumn: quarter
+
+	column month
+		dataType: int64
+		formatString: 0
+		lineageTag: 1400ce66-fdae-4f6b-825b-cdb478753465
+		summarizeBy: none
+		sourceColumn: month
+
+	column month_name
+		dataType: string
+		lineageTag: dd3d7964-9a06-4a11-88a1-aa1f30e32606
+		summarizeBy: none
+		sourceColumn: month_name
+		sortByColumn: month
+
+	column fiscal_year
+		dataType: int64
+		formatString: 0
+		lineageTag: 57d9a5d2-b354-4abc-a19b-d08836aa91c9
+		summarizeBy: none
+		sourceColumn: fiscal_year
+
+	column fiscal_quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: 429d6d9e-c7c5-4f12-86e1-844b4a63b510
+		summarizeBy: none
+		sourceColumn: fiscal_quarter
+
+	column is_weekday
+		dataType: int64
+		formatString: 0
+		lineageTag: 8eb777f1-3cea-4834-ab3f-5f4b443c4076
+		summarizeBy: none
+		sourceColumn: is_weekday
+
+	column month_start_date
+		dataType: dateTime
+		formatString: mmm yyyy
+		lineageTag: 118ec21a-4a0f-4a11-b26c-b32e4fc856bc
+		summarizeBy: none
+		sourceColumn: month_start_date
+
+	column year_month
+		dataType: string
+		lineageTag: 9507c746-2893-4109-bd1c-956c569601e2
+		summarizeBy: none
+		sourceColumn: year_month
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "\dim_date.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"date_key", Int64.Type}, {"date", type date}, {"year", Int64.Type}, {"quarter", Int64.Type}, {"month", Int64.Type}, {"month_name", type text}, {"fiscal_year", Int64.Type}, {"fiscal_quarter", Int64.Type}, {"is_weekday", Int64.Type}}, "en-US"),
+				    AddMonthStart = Table.AddColumn(Typed, "month_start_date", each Date.StartOfMonth([date]), type date),
+				    AddYearMonth = Table.AddColumn(AddMonthStart, "year_month", each Date.ToText([date], "yyyy-MM"), type text)
+				in
+				    AddYearMonth
+

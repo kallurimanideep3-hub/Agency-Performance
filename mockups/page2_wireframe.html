@@ -1,0 +1,20 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Page 2 Wireframe - Agent Performance Grid (1920x1080)</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;color:#1f2937;margin:24px}h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;color:#1e3a8a;margin:18px 0 6px}
+p,li{font-size:13px;color:#4b5563;line-height:1.5}
+.cv{position:relative;background:#fff;border:2px solid #1f2937;width:960.0px;height:540.0px}
+.z{position:absolute;box-sizing:border-box;border:2px dashed #9ca3af;background:#f3f4f6;font-size:10px;padding:4px 6px;overflow:hidden}
+.z b{color:#1e3a8a}.z i{color:#6b7280}
+table{border-collapse:collapse;font-size:12px}td,th{border:1px solid #d1d5db;padding:3px 8px;text-align:left}th{background:#1e3a8a;color:#fff}
+</style></head><body>
+<h1>Page 2 - Agent Performance Grid: exact wireframe</h1>
+<p>Canvas 1920 × 1080, drawn at 50%. Same margins (40) and gaps (20) as Page 1 so the report feels like one product. This page uses a Deneb custom visual only for the grid; slicers, header and footnote are native.</p>
+<div class="cv"><div class="z" style="left:20.0px;top:10.0px;width:920.0px;height:40.0px"><b>HEADER</b><br>Text box · title, 'data as of', month in view<br><i>x40 y20 1840×80</i></div><div class="z" style="left:20.0px;top:60.0px;width:222.5px;height:35.0px"><b>SLICER</b><br>Year · dim_date[year] · tile<br><i>x40 y120 445×70</i></div><div class="z" style="left:252.5px;top:60.0px;width:222.5px;height:35.0px"><b>SLICER</b><br>Month · dim_date[month_name] · dropdown, single select<br><i>x505 y120 445×70</i></div><div class="z" style="left:485.0px;top:60.0px;width:222.5px;height:35.0px"><b>SLICER</b><br>Region · dim_agent[region] · dropdown<br><i>x970 y120 445×70</i></div><div class="z" style="left:717.5px;top:60.0px;width:222.5px;height:35.0px"><b>SLICER</b><br>Territory · dim_agent[territory] · dropdown<br><i>x1435 y120 445×70</i></div><div class="z" style="left:20.0px;top:105.0px;width:920.0px;height:395.0px"><b>DENEB</b><br>Vega-Lite bullet grid · one row per agent, sorted by APE vs target · fields: agent, territory, ape, target, pct, status · click = cross-filter, right-click = drill through to Page 3<br><i>x40 y210 1840×790</i></div><div class="z" style="left:20.0px;top:510.0px;width:920.0px;height:20.0px"><b>FOOTNOTE</b><br>Text box · inactive agents have no targets and are not shown (186 of 200 scored)<br><i>x40 y1020 1840×40</i></div></div>
+<h2>Positions (px)</h2><table><tr><th>Element</th><th>X</th><th>Y</th><th>Width</th><th>Height</th></tr><tr><td>HEADER · Text box</td><td>40</td><td>20</td><td>1840</td><td>80</td></tr><tr><td>SLICER · Year</td><td>40</td><td>120</td><td>445</td><td>70</td></tr><tr><td>SLICER · Month</td><td>505</td><td>120</td><td>445</td><td>70</td></tr><tr><td>SLICER · Region</td><td>970</td><td>120</td><td>445</td><td>70</td></tr><tr><td>SLICER · Territory</td><td>1435</td><td>120</td><td>445</td><td>70</td></tr><tr><td>DENEB · Vega-Lite bullet grid</td><td>40</td><td>210</td><td>1840</td><td>790</td></tr><tr><td>FOOTNOTE · Text box</td><td>40</td><td>1020</td><td>1840</td><td>40</td></tr></table>
+<h2>Design decisions</h2><ul>
+<li><b>One tall visual, not several small ones:</b> the job on this page is scanning 186 agents for who is red. Giving Deneb the full width and about 75% of the height keeps every row readable.</li>
+<li><b>Slicers directly above the grid:</b> Year and Month define the target period; Region and Territory narrow the list so it fits without scrolling. Month is single-select because a full-year view turns almost every agent green.</li>
+<li><b>Sorted by achievement, worst at the bottom:</b> the eye lands on the leaders first; the red tail at the bottom is what a territory manager acts on.</li>
+<li><b>Colour carries the status, position carries the size:</b> green, amber and red come from the Target Status measure, so thresholds live in one place in the model.</li>
+<li><b>Click vs right-click:</b> a left click cross-filters (dims the others); right-click, Drill through opens that agent on Page 3, because cross-filtering cannot cross pages.</li>
+</ul></body></html>

@@ -1,0 +1,27 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_ProTooling = ["MCP-PBIModeling","DevMode"]
+
+ref table dim_date
+ref table dim_agent
+ref table dim_product
+ref table fact_sales
+ref table fact_persistency
+ref table fact_target
+ref table dim_month
+ref table security_user_territory
+ref table _Measures
+
+ref role 'Territory Manager'
+
+ref cultureInfo en-US
+

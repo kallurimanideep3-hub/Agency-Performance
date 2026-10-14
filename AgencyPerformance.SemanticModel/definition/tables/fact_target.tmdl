@@ -1,0 +1,55 @@
+/// Monthly APE target per agent. Month grain; linked to calendar through dim_month bridge.
+table fact_target
+	lineageTag: 7bbbee1e-ce19-48ad-8e24-aece4338145b
+
+	column agent_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8cb35a02-55eb-4160-a347-379804436ee9
+		summarizeBy: none
+		sourceColumn: agent_id
+
+	column year
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: cfa14a6f-9664-4ddd-90b1-fb3ccbb4519a
+		summarizeBy: none
+		sourceColumn: year
+
+	column month
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 291343a6-3548-49ba-9339-e0ee4128dc8b
+		summarizeBy: none
+		sourceColumn: month
+
+	column ape_target_usd
+		dataType: decimal
+		isHidden
+		formatString: #,0.00
+		lineageTag: 9aecce62-5501-4c84-b3f7-c2d7718657a5
+		summarizeBy: none
+		sourceColumn: ape_target_usd
+
+	column month_start_date
+		dataType: dateTime
+		isHidden
+		formatString: mmm yyyy
+		lineageTag: aa1061f6-b291-4974-a8aa-6e0879fc05d8
+		summarizeBy: none
+		sourceColumn: month_start_date
+
+	partition fact_target = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "\fact_target.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"agent_id", Int64.Type}, {"year", Int64.Type}, {"month", Int64.Type}, {"ape_target_usd", Currency.Type}}, "en-US"),
+				    AddMonthStart = Table.AddColumn(Typed, "month_start_date", each #date([year], [month], 1), type date)
+				in
+				    AddMonthStart
+

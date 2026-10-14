@@ -1,0 +1,7 @@
+product_id,product_code,product_name,product_category,premium_type
+1,P001,ProGrowth ULIP,ULIP,regular
+2,P002,WealthMax ULIP,ULIP,single
+3,P003,SecureLife Traditional,Traditional,regular
+4,P004,MoneyBack Traditional,Traditional,regular
+5,P005,PureTerm Plan,Term,regular
+6,P006,EndowPlus,Endowment,single

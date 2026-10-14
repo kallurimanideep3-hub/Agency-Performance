@@ -1,0 +1,46 @@
+/// Product master. product_category is the primary grouping.
+table dim_product
+	lineageTag: 3f28bfdd-940f-43a4-9105-a63ded7245f6
+
+	column product_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5014ad82-4818-48ab-bddd-e319a6a5ee98
+		summarizeBy: none
+		sourceColumn: product_id
+
+	column product_code
+		dataType: string
+		lineageTag: fa048c36-2999-427d-b20f-70e3ede1861f
+		summarizeBy: none
+		sourceColumn: product_code
+
+	column product_name
+		dataType: string
+		lineageTag: 62b7ea2f-ec2f-4d83-8bb4-604ec5d40168
+		summarizeBy: none
+		sourceColumn: product_name
+
+	column product_category
+		dataType: string
+		lineageTag: e70210bb-df86-48f2-8a90-004f73d3f37f
+		summarizeBy: none
+		sourceColumn: product_category
+
+	column premium_type
+		dataType: string
+		lineageTag: a3dc67f4-82d9-4321-9c8f-e9f02ca02e32
+		summarizeBy: none
+		sourceColumn: premium_type
+
+	partition dim_product = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "\dim_product.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"product_id", Int64.Type}, {"product_code", type text}, {"product_name", type text}, {"product_category", type text}, {"premium_type", type text}}, "en-US")
+				in
+				    Typed
+

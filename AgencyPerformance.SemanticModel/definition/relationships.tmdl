@@ -1,0 +1,37 @@
+relationship fact_sales_date
+	fromColumn: fact_sales.date_key
+	toColumn: dim_date.date_key
+
+relationship fact_sales_agent
+	fromColumn: fact_sales.agent_id
+	toColumn: dim_agent.agent_id
+
+relationship fact_sales_product
+	fromColumn: fact_sales.product_id
+	toColumn: dim_product.product_id
+
+relationship fact_persistency_renewal_due_date
+	fromColumn: fact_persistency.renewal_due_date_key
+	toColumn: dim_date.date_key
+
+relationship fact_persistency_issue_date
+	isActive: false
+	fromColumn: fact_persistency.issue_date_key
+	toColumn: dim_date.date_key
+
+relationship fact_persistency_agent
+	fromColumn: fact_persistency.agent_id
+	toColumn: dim_agent.agent_id
+
+relationship fact_persistency_product
+	fromColumn: fact_persistency.product_id
+	toColumn: dim_product.product_id
+
+relationship fact_target_agent
+	fromColumn: fact_target.agent_id
+	toColumn: dim_agent.agent_id
+
+relationship fact_target_month
+	fromColumn: fact_target.month_start_date
+	toColumn: dim_month.month_start_date
+

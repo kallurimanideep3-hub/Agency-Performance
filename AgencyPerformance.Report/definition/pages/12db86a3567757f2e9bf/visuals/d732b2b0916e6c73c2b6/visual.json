@@ -1,0 +1,36 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "d732b2b0916e6c73c2b6",
+  "position": {
+    "x": 40,
+    "y": 1020,
+    "z": 5000,
+    "height": 40,
+    "width": 1820,
+    "tabOrder": 5000
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Bar = APE as % of monthly target; tick = 100%. Green at or above 100%, amber 90 to 100%, red below 90%. Left-click an agent to cross-filter; right-click, Drill through, to open the agent profile.",
+                    "textStyle": {
+                      "color": "#6b7280"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

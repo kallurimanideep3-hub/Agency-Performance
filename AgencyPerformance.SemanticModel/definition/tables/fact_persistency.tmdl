@@ -1,0 +1,84 @@
+/// One row per policy renewal record. Default date relationship = renewal_due_date_key; issue date is inactive (USERELATIONSHIP).
+table fact_persistency
+	lineageTag: b0378577-6417-4e16-8047-3eadf7ae57ad
+
+	column policy_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1db13469-c7ea-43f4-b958-fd72454f183e
+		summarizeBy: none
+		sourceColumn: policy_id
+
+	column agent_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c09c48c4-0931-43da-8e41-4eeca7f18cfc
+		summarizeBy: none
+		sourceColumn: agent_id
+
+	column product_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 305a67f5-015e-4e70-84ec-4d202e06d73c
+		summarizeBy: none
+		sourceColumn: product_id
+
+	column issue_date_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: aaeaf64b-48ca-4f8c-a374-c670652e93d2
+		summarizeBy: none
+		sourceColumn: issue_date_key
+
+	column renewal_due_date_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: fcb783ab-c8db-4dac-b159-5754c32a59c0
+		summarizeBy: none
+		sourceColumn: renewal_due_date_key
+
+	column renewal_status
+		dataType: string
+		lineageTag: f3c61e4b-bca7-4e4b-a11c-1d888f604101
+		summarizeBy: none
+		sourceColumn: renewal_status
+
+	column premium_usd
+		dataType: decimal
+		isHidden
+		formatString: #,0.00
+		lineageTag: 9cb42a41-5075-4759-bf2a-d6e53af6ef36
+		summarizeBy: none
+		sourceColumn: premium_usd
+
+	column issue_year
+		dataType: int64
+		formatString: 0
+		lineageTag: 3cb23e40-8fec-4bf6-8d29-da70760cc7e3
+		summarizeBy: none
+		sourceColumn: issue_year
+
+	column renewal_due_year
+		dataType: int64
+		formatString: 0
+		lineageTag: fc34c879-ce21-4a60-a3ac-c065561224dd
+		summarizeBy: none
+		sourceColumn: renewal_due_year
+
+	partition fact_persistency = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "\fact_persistency.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"policy_id", Int64.Type}, {"agent_id", Int64.Type}, {"product_id", Int64.Type}, {"issue_date_key", Int64.Type}, {"renewal_due_date_key", Int64.Type}, {"renewal_status", type text}, {"premium_usd", Currency.Type}}, "en-US"),
+				    AddIssueYear = Table.AddColumn(Typed, "issue_year", each Number.IntegerDivide([issue_date_key], 10000), Int64.Type),
+				    AddDueYear = Table.AddColumn(AddIssueYear, "renewal_due_year", each Number.IntegerDivide([renewal_due_date_key], 10000), Int64.Type)
+				in
+				    AddDueYear
+

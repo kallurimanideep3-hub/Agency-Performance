@@ -1,0 +1,218 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Agent performance grid: one bullet row per agent. Bar = APE as % of target for the filtered period; tick = 100% target; colour = band derived from achievement in the transform (same thresholds as the Target Status measure).",
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": {
+    "step": 18
+  },
+  "padding": {
+    "left": 4,
+    "right": 24,
+    "top": 4,
+    "bottom": 4
+  },
+  "transform": [
+    {
+      "filter": "isValid(datum.pct)"
+    },
+    {
+      "calculate": "toNumber(datum.pct)",
+      "as": "achv"
+    },
+    {
+      "calculate": "toNumber(datum.ape)",
+      "as": "apeN"
+    },
+    {
+      "calculate": "toNumber(datum.target)",
+      "as": "targetN"
+    },
+    {
+      "calculate": "format(datum.achv, '.0%')",
+      "as": "achvLabel"
+    },
+    {
+      "calculate": "datum.achv >= 1 ? 'Above target' : (datum.achv >= 0.9 ? 'On track' : 'Below target')",
+      "as": "band"
+    }
+  ],
+  "encoding": {
+    "y": {
+      "field": "agent",
+      "type": "nominal",
+      "sort": {
+        "field": "achv",
+        "op": "max",
+        "order": "ascending"
+      },
+      "axis": {
+        "title": null,
+        "ticks": false,
+        "domain": false,
+        "labelLimit": 200,
+        "labelFontSize": 11
+      }
+    }
+  },
+  "layer": [
+    {
+      "name": "achievement_bar",
+      "mark": {
+        "type": "bar",
+        "height": {
+          "band": 0.62
+        },
+        "cornerRadiusEnd": 2
+      },
+      "encoding": {
+        "x": {
+          "field": "achv",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              0,
+              5
+            ],
+            "clamp": true,
+            "nice": false
+          },
+          "axis": {
+            "title": "APE as % of target  (tick = 100%, bars capped at 500%)",
+            "format": "%",
+            "values": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "grid": true,
+            "gridColor": "#E5E7EB",
+            "orient": "top"
+          }
+        },
+        "color": {
+          "field": "band",
+          "type": "nominal",
+          "scale": {
+            "domain": [
+              "Above target",
+              "On track",
+              "Below target"
+            ],
+            "range": [
+              "#16A34A",
+              "#F59E0B",
+              "#DC2626"
+            ]
+          },
+          "legend": {
+            "title": null,
+            "orient": "bottom",
+            "direction": "horizontal"
+          }
+        },
+        "opacity": {
+          "condition": {
+            "test": "datum['__selected__'] == 'off'",
+            "value": 0.3
+          },
+          "value": 1
+        },
+        "tooltip": [
+          {
+            "field": "agent",
+            "type": "nominal",
+            "title": "Agent"
+          },
+          {
+            "field": "territory",
+            "type": "nominal",
+            "title": "Territory"
+          },
+          {
+            "field": "apeN",
+            "type": "quantitative",
+            "title": "APE",
+            "format": "$,.0f"
+          },
+          {
+            "field": "targetN",
+            "type": "quantitative",
+            "title": "Target",
+            "format": "$,.0f"
+          },
+          {
+            "field": "achvLabel",
+            "type": "nominal",
+            "title": "APE vs target"
+          },
+          {
+            "field": "band",
+            "type": "nominal",
+            "title": "Status"
+          }
+        ]
+      }
+    },
+    {
+      "name": "target_tick",
+      "mark": {
+        "type": "tick",
+        "thickness": 2,
+        "size": 16,
+        "color": "#1F2937"
+      },
+      "encoding": {
+        "x": {
+          "datum": 1,
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "name": "value_label",
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "dx": 4,
+        "fontSize": 10,
+        "color": "#1F2937"
+      },
+      "encoding": {
+        "x": {
+          "field": "achv",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "achvLabel",
+          "type": "nominal"
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    },
+    "font": "Segoe UI",
+    "axis": {
+      "labelFont": "Segoe UI",
+      "titleFont": "Segoe UI",
+      "labelColor": "#1F2937",
+      "titleColor": "#6B7280"
+    },
+    "legend": {
+      "labelFont": "Segoe UI",
+      "labelFontSize": 12
+    }
+  },
+  "autosize": {
+    "type": "fit-x",
+    "contains": "padding"
+  }
+}

@@ -1,0 +1,88 @@
+/// One row per policy sale. Orphan agent_ids are remapped to -1 (Unmapped); original value kept in agent_id_source.
+table fact_sales
+	lineageTag: 8641e27a-7395-45d9-b669-36af8801576a
+
+	column sale_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 416df706-dc5f-402e-9c5b-6d2d65909b13
+		summarizeBy: none
+		sourceColumn: sale_id
+
+	column date_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 694827b1-3d60-47a3-ac7f-e3ce38fcc322
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column agent_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 459dd377-817f-48b4-8930-7f73be7cb63c
+		summarizeBy: none
+		sourceColumn: agent_id
+
+	column agent_id_source
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 95cf6261-c023-4b1f-a500-b64c0254960d
+		summarizeBy: none
+		sourceColumn: agent_id_source
+
+	column product_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 11b41ccd-8887-467a-9ba7-d95529120835
+		summarizeBy: none
+		sourceColumn: product_id
+
+	column ape_usd
+		dataType: decimal
+		isHidden
+		formatString: #,0.00
+		lineageTag: 5f83494a-6da9-43f5-8d05-177f36c5e5c0
+		summarizeBy: none
+		sourceColumn: ape_usd
+
+	column fyp_usd
+		dataType: decimal
+		isHidden
+		formatString: #,0.00
+		lineageTag: 5a9b921e-aac2-4163-8de5-1b317a068d6b
+		summarizeBy: none
+		sourceColumn: fyp_usd
+
+	column policies_issued
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 997b41bf-034e-4d40-81b5-521c356e8289
+		summarizeBy: none
+		sourceColumn: policies_issued
+
+	column sale_channel
+		dataType: string
+		lineageTag: 27a8f937-1480-4ffa-a962-420fa0ddceee
+		summarizeBy: none
+		sourceColumn: sale_channel
+
+	partition fact_sales = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "\fact_sales.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"sale_id", Int64.Type}, {"date_key", Int64.Type}, {"agent_id", Int64.Type}, {"product_id", Int64.Type}, {"ape_usd", Currency.Type}, {"fyp_usd", Currency.Type}, {"policies_issued", Int64.Type}, {"sale_channel", type text}}, "en-US"),
+				    AgentSrc = Table.PromoteHeaders(Csv.Document(File.Contents(DataFolder & "\dim_agent.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]), [PromoteAllScalars=true]),
+				    ValidIds = List.Buffer(List.Transform(Table.Column(AgentSrc, "agent_id"), each Int64.From(_))),
+				    KeepSource = Table.AddColumn(Typed, "agent_id_source", each [agent_id], Int64.Type),
+				    Remap = Table.TransformColumns(KeepSource, {{"agent_id", each if List.Contains(ValidIds, _) then _ else -1, Int64.Type}})
+				in
+				    Remap
+

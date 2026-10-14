@@ -1,0 +1,31 @@
+/// Month-grain bridge: one row per month. Lets fact_target (year+month) connect to the calendar without a date surrogate key.
+table dim_month
+	lineageTag: cb33368c-f945-479e-bc62-92e29f9654be
+
+	column month_start_date
+		lineageTag: 89bfb4df-dba9-4c38-8227-8f1e28969e17
+		isNameInferred
+		sourceColumn: [month_start_date]
+
+	column year
+		lineageTag: 51427f6a-f8dc-407d-93bf-a2834d56000f
+		isNameInferred
+		sourceColumn: [year]
+
+	column month
+		lineageTag: 36a33032-dd7a-4b9b-8c37-7664ee01805a
+		isNameInferred
+		sourceColumn: [month]
+
+	partition dim_month = calculated
+		mode: import
+		source =
+				DISTINCT(
+				    SELECTCOLUMNS(
+				        dim_date,
+				        "month_start_date", dim_date[month_start_date],
+				        "year", dim_date[year],
+				        "month", dim_date[month]
+				    )
+				)
+

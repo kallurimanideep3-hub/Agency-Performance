@@ -1,0 +1,87 @@
+/// Agent master plus one synthetic Unmapped row (agent_id -1) that catches sales rows whose agent_id is not in the source master.
+table dim_agent
+	lineageTag: 9e330d26-f93b-4573-b279-896c5e323cc7
+
+	column agent_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c3a8b376-6f03-483c-acea-a436f2aa6d1a
+		summarizeBy: none
+		sourceColumn: agent_id
+
+	column agent_code
+		dataType: string
+		lineageTag: dc3a8f43-a8c7-4434-b324-1f5443dea7ba
+		summarizeBy: none
+		sourceColumn: agent_code
+
+	column agent_name
+		dataType: string
+		lineageTag: dd65648d-9408-4c14-892f-0a8b1611b817
+		summarizeBy: none
+		sourceColumn: agent_name
+
+	column region
+		dataType: string
+		lineageTag: 6dc46042-4c2b-4aea-8a9c-2479369c9786
+		summarizeBy: none
+		sourceColumn: region
+
+	column territory
+		dataType: string
+		lineageTag: 2f86b55b-6267-4e54-9b57-aebc1ce3621d
+		summarizeBy: none
+		sourceColumn: territory
+
+	column office
+		dataType: string
+		lineageTag: 4aee8dd6-08b0-4c17-afff-97648258ad17
+		summarizeBy: none
+		sourceColumn: office
+
+	column join_date
+		dataType: dateTime
+		formatString: dd-MMM-yyyy
+		lineageTag: 5941df2b-a82c-41a1-a174-271059299ddb
+		summarizeBy: none
+		sourceColumn: join_date
+
+	column channel
+		dataType: string
+		lineageTag: 90830677-41f0-424b-8472-90c54cc28b9e
+		summarizeBy: none
+		sourceColumn: channel
+
+	column active_flag
+		dataType: int64
+		formatString: 0
+		lineageTag: 2b2ad0b2-c83e-4871-b791-4de43a1fe29e
+		summarizeBy: none
+		sourceColumn: active_flag
+
+	column is_mapped_agent
+		dataType: boolean
+		lineageTag: 63d2d28b-448f-4953-9b8e-8b332e22c1fd
+		summarizeBy: none
+		sourceColumn: is_mapped_agent
+
+	/// Unique label for charts: agent names are not unique (34 duplicates).
+	column agent_label = dim_agent[agent_name] & " (" & dim_agent[agent_code] & ")"
+		dataType: string
+		lineageTag: bd03953e-1534-414a-b1ae-7c32d7741267
+		summarizeBy: none
+
+	partition dim_agent = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "\dim_agent.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    Typed = Table.TransformColumnTypes(Promoted, {{"agent_id", Int64.Type}, {"agent_code", type text}, {"agent_name", type text}, {"region", type text}, {"territory", type text}, {"office", type text}, {"join_date", type date}, {"channel", type text}, {"active_flag", Int64.Type}}, "en-US"),
+				    UnmappedRow = #table(type table [agent_id = Int64.Type, agent_code = text, agent_name = text, region = text, territory = text, office = text, join_date = date, channel = text, active_flag = Int64.Type], {{-1, "UNMAPPED", "Unmapped agent (not in master)", "Unknown", "Unknown", "Unknown", null, "unknown", 0}}),
+				    Combined = Table.Combine({Typed, UnmappedRow}),
+				    AddFlag = Table.AddColumn(Combined, "is_mapped_agent", each [agent_id] <> -1, type logical)
+				in
+				    AddFlag
+
