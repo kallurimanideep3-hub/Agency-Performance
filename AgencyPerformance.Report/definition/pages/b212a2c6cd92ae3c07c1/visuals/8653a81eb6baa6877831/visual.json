@@ -19,10 +19,10 @@
               {
                 "textRuns": [
                   {
-                    "value": "Cohort = policy issue year. Persistency = renewed ÷ (renewed + lapsed + grace policies), measured by renewal due date. Active Policy Count = policies issued by the date minus policies lapsed by the date. It is a snapshot, so it is not summed across years.",
+                    "value": "Cohort = policy issue year. Persistency = renewed \u00f7 (renewed + lapsed + grace policies), measured by renewal due date. Active Policy Count = policies issued by the date minus policies lapsed by the date. It is a snapshot, so it is not summed across years.",
                     "textStyle": {
                       "fontSize": "12pt",
-                      "color": "#1e3a8a"
+                      "color": "#C2410C"
                     }
                   }
                 ]

@@ -1,6 +1,8 @@
-# Life Insurance Agency Dashboard (Power BI, PBIP)
+# Life Insurance Agency Dashboard (Power BI, PBIP): Colourful edition
 
 A four-page Power BI report built on the supplied CSV files: Executive Summary, Agent Performance Grid (Deneb), Agent Profile Card (HTML), and Persistency Cohort. Saved as a PBIP project; one row-level security role, "Territory Manager".
+
+This edition uses a vibrant, multi-colour design (custom theme `Vibrant Agency`, a different accent colour per page, tinted KPI cards, gradient agent card) instead of the original blue-only look. The data model, DAX and RLS are identical to the original version.
 
 ## Repository layout
 
@@ -9,19 +11,28 @@ A four-page Power BI report built on the supplied CSV files: Executive Summary, 
 /deneb/agent_performance_grid.vl.json   Vega-Lite spec used on Page 2
 /AgencyPerformance.SemanticModel/          model (TMDL)
 /AgencyPerformance.Report/                 report definition
+   StaticResources/RegisteredResources/VibrantAgency.json   custom colour theme
+/*.csv                                     the six source files (dim_agent, dim_date, dim_product, fact_sales, fact_persistency, fact_target)
 README.md
 ```
 
-Open the `.pbip` file in Power BI Desktop. The CSV folder is the `DataFolder` parameter in Power Query; point it at the folder holding the supplied files and refresh.
+Open the `.pbip` file in Power BI Desktop. The CSV files sit in the project root, so set the `DataFolder` parameter (Transform data > Edit parameters) to the folder you unzipped to, with no quotes and no trailing backslash, for example `C:\AgentPerformance_Colorful`, then Refresh. A ready-made `AgencyPerformance.pbix` (data embedded, no path setup needed to open and view) is included next to the `.pbip`; it only needs the `DataFolder` parameter if you press Refresh.
 
 ## Pages
 
 | Page | What it shows | Visuals |
 |---|---|---|
-| 1 Executive Summary | APE YTD, APE vs Target %, Active Agents, Persistency Rate; monthly APE with target line; Top 10 agents; Region / Channel / Year slicers | native; mobile layout included |
-| 2 Agent Performance Grid | one row per agent, bar = APE as % of target, tick = 100%, colour = above / on track / below | Deneb (Vega-Lite) |
-| 3 Agent Profile Card | name, territory, YTD APE and rank, MoM arrow with 12-month sparkline, top product, persistency | HTML Content Secure, driven by DAX |
+| 1 Executive Summary | APE YTD, APE vs Target %, Active Agents, Persistency Rate; monthly APE with target line; Top 10 agents; Region / Channel / Year slicers; data labels on every chart | native; mobile layout included |
+| 2 Agent Performance Grid | one row per agent, bar = APE as % of target, tick = 100%, colour = above / on track / below. Agents with 0% (no APE in the period) are hidden. Slicers: Year, Month, Region, Territory, Agent | Deneb (Vega-Lite) |
+| 3 Agent Profile Card | name, territory, YTD APE and rank, MoM arrow with 12-month sparkline, top product, persistency. An Agent slicer synced with the Page 2 Agent slicer picks the agent; drill-through also works | HTML Content Secure, driven by DAX |
 | 4 Persistency Cohort | renewal rate by issue-year cohort, cohort detail, Active Policy Count by year | matrix, table, column chart |
+
+## What changed in this edition
+
+- **Colour:** custom theme with ten vivid data colours; page accents violet (Page 1), magenta (Page 2), teal (Page 3), orange (Page 4); tinted KPI cards with coloured borders; the Page 3 card header is a violet-pink-orange gradient.
+- **Data labels** are on for every chart (bar, column and combo).
+- **Page 2:** the grid hides agents with 0% (`datum.pct > 0` in the Deneb spec), and the five slicers are evenly spaced on one row aligned with the title banner and the grid.
+- **Agent slicer** on Pages 2 and 3, synced as one group, so choosing an agent on the grid carries to the profile card. Page 3 shows a "select an agent" message until an agent is chosen.
 
 ## Data model decisions
 
@@ -74,7 +85,7 @@ All required measures are in `_Measures`, grouped in display folders (0 Base, 1 
 ## Visual notes and known behaviour
 
 - **Deneb does not receive Decimal measures.** Currency measures arrive as undefined, which shows as `$NaN` in tooltips. The grid is fed by two floating-point "chart feed" measures (`APE (chart feed)`, `APE Target (chart feed)`); the achievement percentage is already a double.
-- **Cross-filter vs. cross-page.** Power BI cannot cross-filter between pages, so "cross-filtering to Page 3" is implemented as drill-through: left-click on the grid cross-filters within Page 2; right-click an agent > Drill through > Agent Profile Card opens that agent on Page 3 (`dim_agent[agent_label]` is the drill-through field). The Deneb context menu setting must be on.
+- **Cross-filter vs. cross-page.** Power BI cannot cross-filter between pages, so "cross-filtering to Page 3" is implemented as drill-through: left-click on the grid cross-filters within Page 2; right-click an agent > Drill through > Agent Profile Card opens that agent on Page 3 (`dim_agent[agent_label]` is the drill-through field). The Deneb context menu setting must be on. The synced Agent slicer is an alternative way to open the same profile.
 - **Achievement above 100%.** Targets in the supplied data are well below actual sales for most agents (the median agent in December 2025 is about 265% of target). The grid caps bars at 500% for readability and the label always shows the real percentage. I treated this as a property of the data, not a calculation error. I recomputed it from the CSV files with pandas: target rows total $12,856,918 against $39,278,766 of APE, and the actual-to-target ratio is about 2.6 to 2.9 at monthly, quarterly and annual grain, so it is not a unit or period mismatch (for example, targets entered as quarterly figures). The measure divides actual by target exactly as the data gives them. If the business confirms the targets are understated, only the source file needs correcting; no DAX changes.
 - **Status thresholds**: above target at 100% or more, on track from 90% to under 100%, below target under 90%. The thresholds are in the `Target Status` measure and mirrored in the Deneb spec.
 - **Page 3 card** is a DAX-generated HTML string rendered by the certified HTML Content Secure visual. It uses its own as-of date logic so page-level date filters do not change it.

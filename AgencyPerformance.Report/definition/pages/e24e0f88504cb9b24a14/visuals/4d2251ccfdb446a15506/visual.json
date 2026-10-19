@@ -57,7 +57,7 @@
                 "color": {
                   "expr": {
                     "Literal": {
-                      "Value": "'#1E3A8A'"
+                      "Value": "'#6D28D9'"
                     }
                   }
                 }
@@ -164,7 +164,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Data as of 31 Dec 2025 · APE in USD'"
+                  "Value": "'Data as of 31 Dec 2025 \u00b7 APE in USD'"
                 }
               }
             },

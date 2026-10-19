@@ -16,7 +16,7 @@
   },
   "transform": [
     {
-      "filter": "isValid(datum.pct)"
+      "filter": "isValid(datum.pct) && datum.pct > 0"
     },
     {
       "calculate": "toNumber(datum.pct)",

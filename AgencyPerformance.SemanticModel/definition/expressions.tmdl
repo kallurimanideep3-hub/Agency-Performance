@@ -1,4 +1,4 @@
 /// Folder containing the source CSV files. Change this one value to repoint the model.
-expression DataFolder = "C:\Users\ADMIN\Desktop\Assignment\data" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+expression DataFolder = "C:\AgentPerformance_Colorful" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
 	lineageTag: ef5bda4e-92d8-4f1a-82b8-e47905e31761
 

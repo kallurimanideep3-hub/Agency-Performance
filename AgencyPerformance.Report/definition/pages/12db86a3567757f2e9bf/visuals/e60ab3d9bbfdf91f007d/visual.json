@@ -6,7 +6,7 @@
     "y": 120,
     "z": 4000,
     "height": 70,
-    "width": 445,
+    "width": 352,
     "tabOrder": 4000
   },
   "visual": {
@@ -84,7 +84,7 @@
                 "color": {
                   "expr": {
                     "Literal": {
-                      "Value": "'#6b7280'"
+                      "Value": "'#7C3AED'"
                     }
                   }
                 }
@@ -180,9 +180,8 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "ThemeDataColor": {
-                      "ColorId": 1,
-                      "Percent": 0
+                    "Literal": {
+                      "Value": "'#7C3AED'"
                     }
                   }
                 }
@@ -198,7 +197,7 @@
             "width": {
               "expr": {
                 "Literal": {
-                  "Value": "1D"
+                  "Value": "2D"
                 }
               }
             }

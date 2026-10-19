@@ -183,9 +183,22 @@
                 "color": {
                   "expr": {
                     "Literal": {
-                      "Value": "'#1E3A8A'"
+                      "Value": "'#F97316'"
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "labels": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
                 }
               }
             }
@@ -223,7 +236,7 @@
                 "color": {
                   "expr": {
                     "Literal": {
-                      "Value": "'#1E3A8A'"
+                      "Value": "'#F97316'"
                     }
                   }
                 }
